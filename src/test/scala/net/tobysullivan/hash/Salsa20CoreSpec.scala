@@ -12,62 +12,42 @@ class Salsa20CoreSpec extends WordSpec with Matchers {
       
       res shouldEqual 738197510
     }
+    "Produce the correct value for two small positive inputs" in {
+      val res = Salsa20Core.r(76, 8)
+      val expected = 19456
+      
+      res shouldEqual expected
+    }
   }
   "Calling salsa20Core" should {
-    "Produce the right output according to the Internet Draft" in {
+    "Produce the correct resulting bytes according to the internet draft" in {
       /* 
-       * These inputand output values are defined at http://tools.ietf.org/html/draft-josefsson-scrypt-kdf-01#page-10
-       */
+-      * These input and output values are defined at http://tools.ietf.org/html/draft-josefsson-scrypt-kdf-01#page-10
+-      */
+      val input = "7e 87 9a 21 4f 3e c9 86 7c a9 40 e6 41 71 8f 26 ba ee 55 5b 8c 61 c1 b5 0d f8 46 11 6d cd 3b 1d ee 24 f3 19 df 9b 3d 85 14 12 1e 4b 5a c5 aa 32 76 02 1d 29 09 c7 48 29 ed eb c6 8d b8 b8 c2 5e"
       
-      implicit def hex2int(hex: String): Int = java.lang.Long.parseLong(hex, 16).toInt
+      val output= "a4 1f 85 9c 66 08 cc 99 3b 81 ca cb 02 0c ef 05 04 4b 21 81 a2 fd 33 7d fd 7b 1c 63 96 68 2f 29 b4 39 31 68 e3 c9 e6 bc fe 6b c5 b7 a0 6d 96 ba e4 24 cc 10 2c 91 74 5c 24 ad 67 3d c7 61 8f 81"
       
-      val input: Seq[Int] = Seq(
-          "7e879a21", 
-          "4f3ec986",
-          "7ca940e6",
-          "41718f26",
-          "baee555b",
-          "8c61c1b5",
-          "0df84611",
-          "6dcd3b1d",
-
-          "ee24f319",
-          "df9b3d85",
-          "14121e4b",
-          "5ac5aa32",
-
-          "76021d29",
-          "09c74829",
-          "edebc68d",
-          "b8b8c25e"
-        )
+      implicit def string2bytes(in: String): Seq[Byte] = in.split(" ").map(s => java.lang.Integer.parseInt(s, 16).toByte)
         
+      val inBytes: Seq[Byte] = input
       
-      val expected: Seq[Int] = Seq(
-        "a41f859c", 
-        "6608cc99", 
-        "3b81cacb", 
-        "020cef05",
-        
-        "044b2181", 
-        "a2fd337d", 
-        "fd7b1c63", 
-        "96682f29",
+      val outBytes: Seq[Byte] = output
+      
+      val res = Salsa20Core.salsa20Core(inBytes, 8)
+      
+      res shouldEqual outBytes
+    }
+  }
+  "Calling grate on a twistableSeq" should {
+    "properly transform a sequence of one int" in {
+      val inSeq = Seq(12, 44, 32)
+      
+      val twistable = new Salsa20Core.twistableSeq(inSeq)
+      
+      val res = twistable.grate(0, 1, 2, 8)
 
-        "b4393168", 
-        "e3c9e6bc", 
-        "fe6bc5b7", 
-        "a06d96ba",
-
-        "e424cc10", 
-        "2c91745c", 
-        "24ad673d", 
-        "c7618f81"    
-      )
-      
-      val result = Salsa20Core.salsa20Core(input)
-      
-      result shouldEqual expected
+      res shouldEqual Seq(19468, 44, 32)
     }
   }
 }
