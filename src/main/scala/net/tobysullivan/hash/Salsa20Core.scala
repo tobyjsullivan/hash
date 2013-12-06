@@ -7,7 +7,7 @@ object Salsa20Core {
     (((a) << (b)) | ((a) >> (32 - (b))))
   }
 
-  def salsa20Core(in: Seq[Int]): Seq[Int] = {
+  def salsa20Core(in: Seq[Int], n:Int = 20): Seq[Int] = {
     require(in.size == 16, "salsa20Core only works on seq of 16 ints")
 
     implicit class x(a: Seq[Int]) {
@@ -34,9 +34,12 @@ object Salsa20Core {
           (14, 13, 12, 13), (15, 14, 13, 18))
 
         sequence.foldRight(a)((t, a) => a.grate(t._1, t._2, t._3, t._4))
+
       }
     }
 
-    (0 until 10).foldLeft(in)((a, _) => a.twist)
+    val twisted: Seq[Int] = (n until 0 by -2).foldLeft(in)((a, _) => a.twist)
+
+    (twisted zip in) map (pair => pair._1 + pair._2)
   }
 }
