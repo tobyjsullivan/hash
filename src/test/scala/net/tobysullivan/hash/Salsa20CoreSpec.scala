@@ -41,13 +41,11 @@ class Salsa20CoreSpec extends WordSpec with Matchers {
   }
   "Calling grate on a twistableSeq" should {
     "properly transform a sequence of one int" in {
-      val inSeq = Seq(12, 44, 32)
+      val inSeq = Seq(12, 44, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
       
-      val twistable = new Salsa20Core.twistableSeq(inSeq)
-      
-      val res = twistable.grate(0, 1, 2, 8)
+      val res = Salsa20Core.grate(inSeq, 0, 1, 2, 8)
 
-      res shouldEqual Seq(19468, 44, 32)
+      res shouldEqual Seq(19468, 44, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     }
   }
 }

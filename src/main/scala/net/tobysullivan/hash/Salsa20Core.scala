@@ -4,15 +4,17 @@ object Salsa20Core {
   Int.MaxValue.toBinaryString
 
   def r(a: Int, b: Int): Int = {
-    (((a) << (b)) | ((a) >> (32 - (b))))
+    (((a) << (b)) | ((a) >>> (32 - (b))))
   }
+  
+  def grate(x: Seq[Int], i0: Int, i1: Int, i2: Int, i3: Int): Seq[Int] =
+    x.updated(i0, x(i0) ^ r(x(i1) + x(i2), i3))
 
   /*
    * This class is only public for testability. Otherwise it would be buried in the salsa20Core method
    */
   implicit class twistableSeq(a: Seq[Int]) {
-    def grate(i0: Int, i1: Int, i2: Int, i3: Int): Seq[Int] =
-      a.updated(i0, a(i0) ^ r(a(i1) + a(i2), i3))
+    require(a.size == 16, "a must be of size 16")
 
     def twist: Seq[Int] = {
       val sequence = Seq(
@@ -32,27 +34,28 @@ object Salsa20Core {
         (9, 8, 11, 13), (10, 9, 8, 18),
         (12, 15, 14, 7), (13, 12, 15, 9),
         (14, 13, 12, 13), (15, 14, 13, 18))
-
-      sequence.foldRight(a)((t, a) => a.grate(t._1, t._2, t._3, t._4))
-
+        
+      sequence.foldLeft(a)((b, t) => grate(b, t._1, t._2, t._3, t._4))
     }
   }
   
-  def salsa20Core(in: Seq[Byte], n: Int): Seq[Byte] = {
+  def salsa20Core(in: Seq[Byte], n: Int): Seq[Byte] = {    
     require(in.size == 64, "salsa20Core only works on seq of 64 bytes")
     
     val ints: Seq[Int] = for {
       i <- (0 until 16).toSeq
-      a = in(i * 4).toInt
-      b = in(i * 4 + 1).toInt
-      c = in(i * 4 + 2).toInt
-      d = in(i * 4 + 3).toInt
+      a = (in(i * 4) & 0xff).toInt
+      b = (in(i * 4 + 1) & 0xff).toInt
+      c = (in(i * 4 + 2) & 0xff).toInt
+      d = (in(i * 4 + 3) & 0xff).toInt
     } yield (a | (b << 8) | (c << 16) | (d << 24))
+    val B32 = ints.toArray
     
+    val x = B32.clone
 
     val twisted: Seq[Int] = (n until 0 by -2).foldLeft(ints)((a, _) => a.twist)
-
-    val outInts = (twisted zip in) map (pair => pair._1 + pair._2)
+    
+    val outInts = (twisted zip ints) map (pair => pair._1 + pair._2)
     
     val out: Seq[Byte] = for {
       i <- outInts
